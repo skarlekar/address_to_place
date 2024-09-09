@@ -4,11 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Address Mapper and Photo Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        #addressForm {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #address {
+            width: 70%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .content {
+            display: flex;
+            gap: 20px;
+        }
         #map, #photo {
+            flex: 1;
             height: 400px;
-            width: 100%;
-            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        #photo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-style: italic;
+            color: #777;
+        }
+        #photo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -18,12 +76,15 @@
         <input type="text" id="address" placeholder="Enter an address" required>
         <button type="submit">Search</button>
     </form>
-    <div id="map"></div>
-    <div id="photo"></div>
+    <div class="content">
+        <div id="map"></div>
+        <div id="photo">Enter an address to view a nearby photo</div>
+    </div>
 
     <script>
         let map;
         let placesService;
+        let currentMarker;
 
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
@@ -43,11 +104,21 @@
             const geocoder = new google.maps.Geocoder();
             geocoder.geocode({ address: address }, function(results, status) {
                 if (status === 'OK') {
+                    // Remove the old marker if it exists
+                    if (currentMarker) {
+                        currentMarker.setMap(null);
+                    }
+
+                    // Reset the map view
                     map.setCenter(results[0].geometry.location);
-                    new google.maps.Marker({
+                    map.setZoom(15);  // You can adjust this zoom level as needed
+
+                    // Create a new marker
+                    currentMarker = new google.maps.Marker({
                         map: map,
                         position: results[0].geometry.location
                     });
+
                     searchNearbyPlaces(results[0].geometry.location);
                 } else {
                     alert('Geocode was not successful for the following reason: ' + status);
