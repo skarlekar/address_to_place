@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Mapper and Photo Viewer</title>
+    <style>
+        #map, #photo {
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Address Mapper and Photo Viewer</h1>
+    <form id="addressForm">
+        <input type="text" id="address" placeholder="Enter an address" required>
+        <button type="submit">Search</button>
+    </form>
+    <div id="map"></div>
+    <div id="photo"></div>
+
+    <script>
+        let map;
+        let placesService;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 0, lng: 0 },
+                zoom: 8
+            });
+            placesService = new google.maps.places.PlacesService(map);
+        }
+
+        document.getElementById('addressForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const address = document.getElementById('address').value;
+            geocodeAddress(address);
+        });
+
+        function geocodeAddress(address) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: address }, function(results, status) {
+                if (status === 'OK') {
+                    map.setCenter(results[0].geometry.location);
+                    new google.maps.Marker({
+                        map: map,
+                        position: results[0].geometry.location
+                    });
+                    searchNearbyPlaces(results[0].geometry.location);
+                } else {
+                    alert('Geocode was not successful for the following reason: ' + status);
+                }
+            });
+        }
+
+        function searchNearbyPlaces(location) {
+            const request = {
+                location: location,
+                radius: '500',
+                type: ['point_of_interest']
+            };
+
+            placesService.nearbySearch(request, function(results, status) {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    getPlaceDetails(results[0].place_id);
+                } else {
+                    document.getElementById('photo').innerHTML = 'No nearby places found.';
+                }
+            });
+        }
+
+        function getPlaceDetails(placeId) {
+            const request = {
+                placeId: placeId,
+                fields: ['photos']
+            };
+
+            placesService.getDetails(request, function(place, status) {
+                if (status === google.maps.places.PlacesServiceStatus.OK && place.photos) {
+                    const photoUrl = place.photos[0].getUrl();
+                    document.getElementById('photo').innerHTML = `<img src="${photoUrl}" alt="Location photo" style="max-width: 100%; height: auto;">`;
+                } else {
+                    document.getElementById('photo').innerHTML = 'No photos available for this location.';
+                }
+            });
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdESW6dg2kI3lGjG6AeHvKqu0zXLD5nPY&libraries=places&callback=initMap" async defer></script>
+</body>
+</html>
