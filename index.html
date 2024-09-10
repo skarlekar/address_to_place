@@ -82,77 +82,97 @@
     </div>
 
     <script>
+        // Global variables to store map, places service, and current marker
         let map;
         let placesService;
         let currentMarker;
 
+        // Function to initialize the Google Map
         function initMap() {
+            // Create a new Google Map centered at (0,0) with zoom level 8
             map = new google.maps.Map(document.getElementById('map'), {
                 center: { lat: 0, lng: 0 },
                 zoom: 8
             });
+            // Initialize the Places service using the map
             placesService = new google.maps.places.PlacesService(map);
         }
 
+        // Add event listener to the address form for submission
         document.getElementById('addressForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const address = document.getElementById('address').value;
-            geocodeAddress(address);
+            e.preventDefault(); // Prevent the form from submitting normally
+            const address = document.getElementById('address').value; // Get the entered address
+            geocodeAddress(address); // Call function to geocode the address
         });
 
+        // Function to geocode the address and update the map
         function geocodeAddress(address) {
-            const geocoder = new google.maps.Geocoder();
+            const geocoder = new google.maps.Geocoder(); // Create a new Geocoder object
+            // Use the geocoder to convert the address to coordinates
             geocoder.geocode({ address: address }, function(results, status) {
                 if (status === 'OK') {
+                    // If geocoding is successful
                     // Remove the old marker if it exists
                     if (currentMarker) {
                         currentMarker.setMap(null);
                     }
 
-                    // Reset the map view
+                    // Center the map on the geocoded location
                     map.setCenter(results[0].geometry.location);
-                    map.setZoom(15);  // You can adjust this zoom level as needed
+                    map.setZoom(15); // Set zoom level to 15 (can be adjusted)
 
-                    // Create a new marker
+                    // Create a new marker at the geocoded location
                     currentMarker = new google.maps.Marker({
                         map: map,
                         position: results[0].geometry.location
                     });
 
+                    // Search for nearby places
                     searchNearbyPlaces(results[0].geometry.location);
                 } else {
+                    // Alert the user if geocoding fails
                     alert('Geocode was not successful for the following reason: ' + status);
                 }
             });
         }
 
+        // Function to search for nearby places
         function searchNearbyPlaces(location) {
+            // Set up the request parameters for nearby search
             const request = {
                 location: location,
-                radius: '500',
-                type: ['point_of_interest']
+                radius: '500', // Search within 500 meters
+                type: ['point_of_interest'] // Look for points of interest
             };
 
+            // Perform a nearby search using the Places service
             placesService.nearbySearch(request, function(results, status) {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    // If places are found, get details of the first place
                     getPlaceDetails(results[0].place_id);
                 } else {
+                    // If no places are found, display a message
                     document.getElementById('photo').innerHTML = 'No nearby places found.';
                 }
             });
         }
 
+        // Function to get details of a specific place
         function getPlaceDetails(placeId) {
+            // Set up the request parameters for place details
             const request = {
                 placeId: placeId,
-                fields: ['photos']
+                fields: ['photos'] // We're only interested in photos
             };
 
+            // Get place details using the Places service
             placesService.getDetails(request, function(place, status) {
                 if (status === google.maps.places.PlacesServiceStatus.OK && place.photos) {
+                    // If a photo is available, display it
                     const photoUrl = place.photos[0].getUrl();
                     document.getElementById('photo').innerHTML = `<img src="${photoUrl}" alt="Location photo" style="max-width: 100%; height: auto;">`;
                 } else {
+                    // If no photo is available, display a message
                     document.getElementById('photo').innerHTML = 'No photos available for this location.';
                 }
             });
