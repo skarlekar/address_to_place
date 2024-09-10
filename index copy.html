@@ -148,29 +148,27 @@
 
         // Function to geocode the address and update the map
         function geocodeAddress(address) {
-            const geocoder = new google.maps.Geocoder();
+            const geocoder = new google.maps.Geocoder(); // Create a new Geocoder object
+            // Use the geocoder to convert the address to coordinates
             geocoder.geocode({ address: address }, function(results, status) {
                 if (status === 'OK') {
-                    // Remove the previous marker if it exists
+                    // If geocoding is successful
+                    // Remove the old marker if it exists
                     if (currentMarker) {
                         currentMarker.setMap(null);
                     }
 
-                    const location = results[0].geometry.location;
-                    // Center the map on the geocoded location and set zoom level
-                    map.setCenter(location);
-                    map.setZoom(15);
+                    // Center the map on the geocoded location
+                    map.setCenter(results[0].geometry.location);
+                    map.setZoom(15); // Set zoom level to 15 (can be adjusted)
 
-                    // Place a new marker at the geocoded location
+                    // Create a new marker at the geocoded location
                     currentMarker = new google.maps.Marker({
                         map: map,
-                        position: location
+                        position: results[0].geometry.location
                     });
 
-                    // Update Street View with the new location
-                    updateStreetView(location);
-
-                    // Search for the place using the address to get photos
+                    // Search for the place using the address
                     searchPlace(address);
                 } else {
                     // Alert the user if geocoding fails
@@ -179,20 +177,17 @@
             });
         }
 
-        // Function to search for the place using the address
+        // New function to search for the place using the address
         function searchPlace(address) {
             const request = {
                 query: address,
                 fields: ['place_id']
             };
 
-            // Use Places API to find the place ID for the given address
             placesService.findPlaceFromQuery(request, function(results, status) {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                    // If a place is found, get its details (including photos)
                     getPlaceDetails(results[0].place_id);
                 } else {
-                    // If no place is found, display a message
                     document.getElementById('photo').innerHTML = 'No photos available for this location.';
                 }
             });
@@ -201,10 +196,8 @@
         // Function to update Street View
         function updateStreetView(location) {
             const streetViewService = new google.maps.StreetViewService();
-            // Check if Street View is available for the location
             streetViewService.getPanorama({ location: location, radius: 50 }, function(data, status) {
                 if (status === 'OK') {
-                    // If available, set the Street View position and point of view
                     panorama.setPosition(data.location.latLng);
                     panorama.setPov({
                         heading: 0,
@@ -212,7 +205,6 @@
                     });
                     panorama.setVisible(true);
                 } else {
-                    // If not available, display a message
                     document.getElementById('streetView').innerHTML = 'No Street View available for this location.';
                 }
             });
@@ -225,7 +217,6 @@
                 fields: ['photos', 'name']
             };
 
-            // Get place details including photos
             placesService.getDetails(request, function(place, status) {
                 if (status === google.maps.places.PlacesServiceStatus.OK) {
                     if (place.photos && place.photos.length > 0) {
@@ -233,7 +224,6 @@
                         carouselElement.innerHTML = ''; // Clear previous photos
                         currentPhotoIndex = 0;
 
-                        // Add each photo to the carousel
                         place.photos.forEach(photo => {
                             const photoUrl = photo.getUrl();
                             const img = document.createElement('img');
@@ -242,14 +232,11 @@
                             carouselElement.appendChild(img);
                         });
 
-                        // Update carousel navigation buttons
                         updateCarouselButtons();
                     } else {
-                        // If no photos are available, display a message
                         document.getElementById('photo').innerHTML = 'No photos available for this location.';
                     }
                 } else {
-                    // If there's an error fetching place details, display a message
                     document.getElementById('photo').innerHTML = 'Error fetching place details.';
                 }
             });
@@ -262,9 +249,7 @@
             const carouselElement = document.querySelector('.carousel');
             const totalPhotos = carouselElement.children.length;
 
-            // Show/hide previous button based on current photo index
             prevBtn.style.display = currentPhotoIndex > 0 ? 'block' : 'none';
-            // Show/hide next button based on current photo index and total photos
             nextBtn.style.display = currentPhotoIndex < totalPhotos - 1 ? 'block' : 'none';
         }
 
@@ -273,16 +258,13 @@
             const carouselElement = document.querySelector('.carousel');
             const totalPhotos = carouselElement.children.length;
 
-            // Update current photo index based on direction
             if (direction === 'next' && currentPhotoIndex < totalPhotos - 1) {
                 currentPhotoIndex++;
             } else if (direction === 'prev' && currentPhotoIndex > 0) {
                 currentPhotoIndex--;
             }
 
-            // Move the carousel to show the current photo
             carouselElement.style.transform = `translateX(-${currentPhotoIndex * 100}%)`;
-            // Update carousel navigation buttons
             updateCarouselButtons();
         }
 
