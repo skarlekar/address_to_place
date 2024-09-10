@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Address Mapper and Photo Viewer</title>
+    <title>Address Mapper, Photo Viewer, and Street View</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -46,9 +46,14 @@
         }
         .content {
             display: flex;
+            flex-direction: column;
             gap: 20px;
         }
-        #map, #photo {
+        .top-row {
+            display: flex;
+            gap: 20px;
+        }
+        #map, #streetView {
             flex: 1;
             height: 400px;
             background-color: #fff;
@@ -57,6 +62,11 @@
             overflow: hidden;
         }
         #photo {
+            height: 300px;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -71,13 +81,16 @@
     </style>
 </head>
 <body>
-    <h1>Address Mapper and Photo Viewer</h1>
+    <h1>Address Mapper, Photo Viewer, and Street View</h1>
     <form id="addressForm">
         <input type="text" id="address" placeholder="Enter an address" required>
         <button type="submit">Search</button>
     </form>
     <div class="content">
-        <div id="map"></div>
+        <div class="top-row">
+            <div id="map"></div>
+            <div id="streetView"></div>
+        </div>
         <div id="photo">Enter an address to view a nearby photo</div>
     </div>
 
@@ -86,6 +99,7 @@
         let map;
         let placesService;
         let currentMarker;
+        let panorama;
 
         // Function to initialize the Google Map
         function initMap() {
@@ -96,6 +110,15 @@
             });
             // Initialize the Places service using the map
             placesService = new google.maps.places.PlacesService(map);
+            
+            // Initialize the Street View panorama
+            panorama = new google.maps.StreetViewPanorama(
+                document.getElementById('streetView'),
+                {
+                    visible: false
+                }
+            );
+            map.setStreetView(panorama);
         }
 
         // Add event listener to the address form for submission
@@ -127,11 +150,31 @@
                         position: results[0].geometry.location
                     });
 
+                    // Update Street View
+                    updateStreetView(results[0].geometry.location);
+
                     // Search for nearby places
                     searchNearbyPlaces(results[0].geometry.location);
                 } else {
                     // Alert the user if geocoding fails
                     alert('Geocode was not successful for the following reason: ' + status);
+                }
+            });
+        }
+
+        // New function to update Street View
+        function updateStreetView(location) {
+            const streetViewService = new google.maps.StreetViewService();
+            streetViewService.getPanorama({ location: location, radius: 50 }, function(data, status) {
+                if (status === 'OK') {
+                    panorama.setPosition(data.location.latLng);
+                    panorama.setPov({
+                        heading: 0,
+                        pitch: 0
+                    });
+                    panorama.setVisible(true);
+                } else {
+                    document.getElementById('streetView').innerHTML = 'No Street View available for this location.';
                 }
             });
         }
